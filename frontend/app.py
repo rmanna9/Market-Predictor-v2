@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import requests
@@ -5,7 +6,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Stock Market Predictor", page_icon="📈", layout="wide")
 
-BACKEND_URL = "http://backend:8000/predict"
+BACKEND_URL = f"{os.getenv('BACKEND_URL', 'http://backend-service:8000')}/predict"
 tomorrow = datetime.now() + timedelta(days=1)
 
 st.title("📈 Stock Market Predictor")
