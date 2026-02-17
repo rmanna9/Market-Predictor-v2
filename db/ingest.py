@@ -1,5 +1,5 @@
 import yfinance as yf
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import os
 
 DB_URL = os.getenv(
@@ -10,6 +10,17 @@ DB_URL = os.getenv(
 def ingest_tickers():
     tickers = ["AAPL", "BTC-USD", "SPY"]
     engine = create_engine(DB_URL)
+
+    # Creazione dello schema
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS market_data (
+                date TIMESTAMP,
+                price FLOAT,
+                ticker VARCHAR(10)
+            );
+        """))
+        conn.commit()
 
     for ticker in tickers:
         print(f"Scaricamento dati per {ticker}...")

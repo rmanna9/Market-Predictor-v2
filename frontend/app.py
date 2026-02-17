@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 
-BACKEND_URL = "http://backend-service/predict"
+BACKEND_URL = "http://backend:8000/predict"
 
 st.title("📈 Secure Market Predictor")
 
