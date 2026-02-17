@@ -1,0 +1,21 @@
+FROM postgres:17-alpine3.21
+
+# ── Fix openssl CVE (CRITICAL CVE-2025-15467 + 3H + 6M) ──────────────────────
+# openssl 3.3.5-r0 → 3.3.6-r0 risolve tutte le CVE con fixed version disponibile
+#
+# ── Fix stdlib Go CVE ─────────────────────────────────────────────────────────
+# gosu (binario Go con stdlib vulnerabile) sostituito con su-exec (scritto in C)
+# Il symlink mantiene compatibilità con docker-entrypoint.sh
+#
+# Tutto in un unico RUN atomico per evitare reintroduzioni tra layer
+RUN apk add --no-cache su-exec \
+    && apk add --no-cache "openssl>=3.3.6-r0" \
+    && apk upgrade --no-cache \
+    && rm -f /usr/local/bin/gosu \
+    && ln -s /sbin/su-exec /usr/local/bin/gosu \
+    && rm -rf /var/cache/apk/*
+
+ENV LANG=en_US.utf8
+ENV TZ=UTC
+
+EXPOSE 5432

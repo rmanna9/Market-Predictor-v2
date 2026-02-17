@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      initContainers:
+      - name: wait-for-backend
+        image: market-predictor-v2-db:latest
+        imagePullPolicy: Never
+        command:
+          - sh
+          - -c
+          - |
+            until wget -qO- http://backend-service:8000/predict?ticker=AAPL > /dev/null 2>&1; do
+              echo "Waiting for backend..."; sleep 3;
+            done
+      containers:
+      - name: frontend
+        image: market-predictor-v2-frontend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8501
+        env:
+        - name: BACKEND_URL
+          value: "http://backend-service:8000"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "512m"
+          limits:
+            memory: "512Mi"
+            cpu: "1500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501

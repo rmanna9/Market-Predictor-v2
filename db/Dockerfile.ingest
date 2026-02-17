@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+# Fix CVE-2026-24049 (wheel) e CVE-2025-8869 / CVE-2026-1703 (pip)
+RUN pip install --no-cache-dir --upgrade "pip>=26.0" "wheel>=0.46.2" setuptools
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
+
+CMD ["python", "ingest.py"]

@@ -1,16 +1,21 @@
-services:
+# Le credenziali sensibili sono in .env (NON committare .env su git)
+# Copia .env.example in .env e compila i valori
 
+services:
   # ----------------------------
   # PostgreSQL Database
   # ----------------------------
   db:
-    image: postgres:15
+    build:
+      context: ./db
+      dockerfile: Dockerfile.postgres
+    image: market-predictor-v2-db
     container_name: market_db
     restart: always
     environment:
-      POSTGRES_USER: user_secure
-      POSTGRES_PASSWORD: password_cloud
-      POSTGRES_DB: market_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +23,7 @@ services:
     networks:
       - market_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user_secure -d market_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -29,13 +34,13 @@ services:
   ingestion:
     build:
       context: ./db
-      dockerfile: Dockerfile.db
+      dockerfile: Dockerfile.ingest
     container_name: market_ingestion
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://user_secure:password_cloud@db:5432/market_db
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     networks:
       - market_net
 
@@ -51,7 +56,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://user_secure:password_cloud@db:5432/market_db
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
       - "8000:8000"
     networks:
