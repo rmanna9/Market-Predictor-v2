@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+
+  # ----------------------------
+  # PostgreSQL Database
+  # ----------------------------
+  db:
+    image: postgres:15
+    container_name: market_db
+    restart: always
+    environment:
+      POSTGRES_USER: user_secure
+      POSTGRES_PASSWORD: password_cloud
+      POSTGRES_DB: market_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - market_net
+
+  # ----------------------------
+  # Data Ingestion (one-shot)
+  # ----------------------------
+  ingestion:
+    build:
+      context: ./db
+    container_name: market_ingestion
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://user_secure:password_cloud@db:5432/market_db
+    networks:
+      - market_net
+
+  # ----------------------------
+  # Backend (Inference Service)
+  # ----------------------------
+  backend:
+    build:
+      context: ./backend
+    container_name: market_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://user_secure:password_cloud@db:5432/market_db
+    ports:
+      - "8000:8000"
+    networks:
+      - market_net
+
+  # ----------------------------
+  # Frontend (Streamlit)
+  # ----------------------------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: market_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+    networks:
+      - market_net
+
+# ----------------------------
+# Volumes
+# ----------------------------
+volumes:
+  postgres_data:
+
+# ----------------------------
+# Network
+# ----------------------------
+networks:
+  market_net:
+    driver: bridge

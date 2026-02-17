@@ -1,0 +1,4 @@
+yfinance
+sqlalchemy
+psycopg2-binary
+pandas
